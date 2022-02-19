@@ -9,6 +9,12 @@ sub getrandom_word {
     return @$arr[$val];
 }
 
+sub prnt {
+    my $wrd = $_[0];
+    foreach my $char (split //, $wrd) {
+        print "_ ";
+    }
+}
 
 my $filename = ($ARGV[0]);
 open(my $fh, "<", $filename) 
@@ -26,15 +32,13 @@ close $fh or die "Couldn't Close File : $filename";
 
 my $size = @data;
 my $word = getrandom_word(\@data, $size);
-
 my $remain = 6;
 my $guess;
+
 print "Welcome player this is a Hangman Game.\n";
 while($remain) {
     print "\nHere is your word : ";
-    foreach my $char (split //, $word) {
-        print "_ ";
-    }
+    prnt($word);
     print "\nGuesses so far : \n";
     print "Make a Guess : ";
     $guess = <STDIN>;
