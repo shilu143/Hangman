@@ -27,11 +27,11 @@ sub gen_random_word {
 }
 
 sub Print_word {
-    my ($word) = @_;
+    my ($word, $showall) = @_;
 
     foreach my $x (split //, $word) {
         my $tp = (ord(uc $x) - 65);
-        if($alpha_hash[$tp] == 0) {
+        if($alpha_hash[$tp] == 0 && !$showall) {
             print "_ ";
         }
         else {
@@ -62,6 +62,14 @@ sub body {
 sub isalready_guessed {
     my ($guess_arr, $guess) = @_;
 
+    # if(length($guess) == 0) {
+    #     return 1;
+    # }
+    if ($guess !~ /^[a-zA-Z]+$/){
+        print "Guesses only containing alphabets are acceptable\n";
+        return 1;
+    }
+
     foreach my $x (@$guess_arr) {
         if((uc $x) eq (uc $guess)) {
             print "Sorry you already guessed $guess\n";
@@ -72,14 +80,30 @@ sub isalready_guessed {
 }
 
 sub update {
-    my ($guess) = @_;
+    my ($guess, $word, $done) = @_;
 
+    if($guess eq $word) {
+        $$done = 0;
+        return;
+    }
+    if(length($guess) > 1) {
+        return;
+    }
     my $idx = (ord(uc $guess) - 65);
+    my $i = 0;
     $alpha_hash[$idx] = 1;
+
+    foreach my $x (split //, $word) {
+        my $tp = (ord(uc $x) - 65);
+        if($alpha_hash[$tp] == 1) {
+            $i++;
+        }
+    }
+    $$done = length($word) - $i; 
 }
 
 sub check {
-    my ($guess, $word, $lft_parts) = @_;
+    my ($guess, $word, $lft_parts, $done) = @_;
 
     my $i = 0;
     foreach my $x (split //, $word) {
@@ -87,8 +111,25 @@ sub check {
             $i++;
         }
     }
+    print "**********************************************\n\n";
+    if($done == 0) {
+        print "Congratulations!!, you won the game.\n";
+        body(6 - $$lft_parts);
+        print "Here is the word : ";
+        Print_word($word, 1);
+        $isgameover = 1;
+        return;
+    }
     if($i == 0) {
         ($$lft_parts)--;
+        if($$lft_parts == 0) {
+            print "Gameover!!, you lose the game.\n";
+            body(6 - $$lft_parts);
+            print "The word was : ";
+            Print_word($word, 1);
+            $isgameover = 1;
+            return;
+        }
         print "Bad guess!!, you are left with ($$lft_parts) body parts\n";
     }
     else {
@@ -100,32 +141,32 @@ sub Game_start {
     my ($word) = @_;
 
     my $lft_parts = 6;
-    my $guess; 
-    my @guess_arr;
-    while ($lft_parts) {
+    my ($guess, @guess_arr, $done);
+    $done = length($word); 
+    # my @guess_arr;
+    # my $done;
+
+    while ($lft_parts && !$isgameover) {
         body(6 - $lft_parts);
         print "Here is the word : ";
-        Print_word($word);
+        Print_word($word, 0);
         print "\nGuesses so far : ";
         print join(', ', @guess_arr), "\n";
-        print "Pick an alphabet : ";
+        print "Make a guess : ";
         $guess = <STDIN>;
         chomp($guess);
         while(isalready_guessed(\@guess_arr, $guess)) {
-            print "\nPick an alphabet : ";
+            print "\nMake a guess : ";
             $guess = <STDIN>;
             chomp($guess);
         }
         push(@guess_arr, $guess);
-        update($guess);
-        check($guess, $word, \$lft_parts);
+        update($guess, $word, \$done);
+        check($guess, $word, \$lft_parts, $done);
     }
 }
 
-
 sub int_main {
-    # print gen_random_word(), "\n";
-
     $isgameover = 0;
     
     for(my $i = 0; $i < 26; $i++) {
@@ -137,5 +178,21 @@ sub int_main {
     Game_start($word);
 }
 
-
-int_main();
+my $choice;
+while(1) {
+    print "**********************************************\n\n";
+    int_main();
+    print "**********************************************\n\n";
+    print "Do you play again(Y/N) : ";
+    $choice = <STDIN>;
+    chomp($choice);
+    while(($choice ne "N") && ($choice ne "n") && ($choice ne "Y") && ($choice ne "y")) {
+        print "Please enter a valid choice!!\n";
+        print "Do you play again(Y/N) : ";
+        $choice = <STDIN>;
+        chomp($choice);
+    }
+    if($choice eq "N" || $choice eq "n") {
+        last;
+    }
+}
